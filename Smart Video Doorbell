@@ -1,0 +1,78 @@
+//this is the source code for starting a video call by clicking on a button via smart doorbell.in this code i have used google meet to generate meeting.
+
+import smtplib
+import RPi.GPIO as GPIO
+import time
+import webbrowser
+from email.mime.text import MIMEText
+
+
+
+#Email Variables
+SMTP_SERVER = 'smtp.gmail.com' #Email Server (don't change!)
+SMTP_PORT = 587 #Server Port (don't change!)
+GMAIL_USERNAME = 'videodoorbell4@gmail.com' #change this to match your gmail account
+GMAIL_PASSWORD = 'azqz hjrd tkfa fyzc'  #change this to match your gmail app-password
+
+# Function to handle button press
+def button_callback(channel):
+    meeting_link = "http://meet.google.com/zog-xfhj-xyp"
+
+    # Open meeting link in the default browser
+    webbrowser.open(meeting_link)
+   
+#Set GPIO pins to use BCM pin numbers
+GPIO.setmode(GPIO.BCM)
+
+#Set digital pin 17(BCM) to an input
+GPIO.setup(3, GPIO.IN)
+
+#Set digital pin 17(BCM) to an input and enable the pullup
+GPIO.setup(3, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+
+#Event to detect button press
+GPIO.add_event_detect(3, GPIO.FALLING, callback=button_callback, bouncetime=300)
+
+# Function to handle button press
+
+
+class Emailer:
+    def sendmail(self, recipient, subject, content):
+
+        #Create Headers
+        headers = ["From: " + GMAIL_USERNAME, "Subject: " + subject, "To: " + recipient,
+                   "MIME-Version: 1.0", "Content-Type: text/html"]
+        headers = "\r\n".join(headers)
+
+        #Connect to Gmail Server
+        session = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        session.ehlo()
+        session.starttls()
+        session.ehlo()
+
+        #Login to Gmail
+        session.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+
+        #Send Email & Exit
+        session.sendmail(GMAIL_USERNAME, recipient, headers + "\r\n\r\n" + content)
+        session.quit
+
+sender = Emailer()
+
+while True:
+    if GPIO.event_detected(3):
+        sendTo = 'ishan.gagan05@gmail.com'
+        emailSubject = "Button Press Detected!"
+        emailContent = "https://meet.google.com/zog-xfhj-xyp" + time.ctime()
+        sender.sendmail(sendTo, emailSubject, emailContent)
+        print("Email Sent")
+
+    time.sleep(0.1)
+   
+try:
+    while True:
+        time.sleep(1)
+
+except KeyboardInterrupt:
+    GPIO.cleanup()
